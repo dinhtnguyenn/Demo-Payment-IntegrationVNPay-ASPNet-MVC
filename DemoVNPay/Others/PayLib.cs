@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using System.Web;
 
@@ -26,34 +27,24 @@ namespace DemoVNPay.Others
             {
                 if (!String.IsNullOrEmpty(kv.Value))
                 {
-                    data.Append(kv.Key + "=" + HttpUtility.UrlEncode(kv.Value) + "&");
+                    data.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
                 }
             }
             string queryString = data.ToString();
-            string rawData = GetRequestRaw();
+
             baseUrl += "?" + queryString;
-            string vnp_SecureHash = Util.Sha256(vnp_HashSecret + rawData);
+            String signData = queryString;
+            if (signData.Length > 0)
+            {
+
+                signData = signData.Remove(data.Length - 1, 1);
+            }
+            string vnp_SecureHash = Util.HmacSHA512(vnp_HashSecret, signData);
             baseUrl += "vnp_SecureHash=" + vnp_SecureHash;
+
             return baseUrl;
         }
 
-        private string GetRequestRaw()
-        {
-            StringBuilder data = new StringBuilder();
-            foreach (KeyValuePair<string, string> kv in _requestData)
-            {
-                if (!String.IsNullOrEmpty(kv.Value))
-                {
-                    data.Append(kv.Key + "=" + kv.Value + "&");
-                }
-            }
-            //remove last '&'
-            if (data.Length > 0)
-            {
-                data.Remove(data.Length - 1, 1);
-            }
-            return data.ToString();
-        }
 
 
 
@@ -79,7 +70,7 @@ namespace DemoVNPay.Others
             }
         }
 
-        private string GetResponseRaw()
+        private string GetResponseData()
         {
 
             StringBuilder data = new StringBuilder();
@@ -95,10 +86,9 @@ namespace DemoVNPay.Others
             {
                 if (!String.IsNullOrEmpty(kv.Value))
                 {
-                    data.Append(kv.Key + "=" + kv.Value + "&");
+                    data.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
                 }
             }
-
             //remove last '&'
             if (data.Length > 0)
             {
@@ -109,8 +99,8 @@ namespace DemoVNPay.Others
 
         public bool ValidateSignature(string inputHash, string secretKey)
         {
-            string rspRaw = GetResponseRaw();
-            string myChecksum = Util.Sha256(secretKey + rspRaw);
+            string rspRaw = GetResponseData();
+            string myChecksum = Util.HmacSHA512(secretKey, rspRaw);
             return myChecksum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
         }
 

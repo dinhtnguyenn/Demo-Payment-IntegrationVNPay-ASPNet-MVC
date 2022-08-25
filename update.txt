@@ -1,0 +1,3 @@
+- Cập nhật lên phiên bản 2.1.0
+- Phiên bản 2.1.0 sử dụng phương thức mã hóa SHA512 thay vì SHA256 
+dẫn đến lỗi "sai chữ ký" khi thiết lập tài khoản mới trên api phiên bản cũ
